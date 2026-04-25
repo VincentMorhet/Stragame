@@ -28,7 +28,7 @@ export class IsoGrid {
     const dy = wy - this.originY;
     const gx = dx / TILE_WIDTH + dy / TILE_HEIGHT;
     const gy = dy / TILE_HEIGHT - dx / TILE_WIDTH;
-    return { x: Math.floor(gx), y: Math.floor(gy) };
+    return { x: Math.round(gx), y: Math.round(gy) };
   }
 
   inBounds(gx: number, gy: number): boolean {
