@@ -2,7 +2,12 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <title>Stragame — Tower Defense</title>
     <style>
       html,
@@ -13,16 +18,25 @@
         color: #eee;
         font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         overflow: hidden;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+        overscroll-behavior: none;
+        -webkit-tap-highlight-color: transparent;
       }
       #game {
         width: 100vw;
         height: 100vh;
+        height: 100dvh;
         display: flex;
         align-items: center;
         justify-content: center;
       }
       canvas {
         image-rendering: pixelated;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
       }
     </style>
   </head>
