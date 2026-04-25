@@ -1,12 +1,28 @@
 import Phaser from "phaser";
 
+interface MenuButton {
+  rect: Phaser.Geom.Rectangle;
+  bg: Phaser.GameObjects.Rectangle;
+  baseFill: number;
+  hoverFill: number;
+  onClick: () => void;
+}
+
 export class MenuScene extends Phaser.Scene {
+  private buttons: MenuButton[] = [];
+  private debugText!: Phaser.GameObjects.Text;
+  private tapCount: number = 0;
+  private lastTap: string = "—";
+
   constructor() {
     super("MenuScene");
   }
 
   create(): void {
     const { width, height } = this.scale;
+    this.buttons = [];
+    this.tapCount = 0;
+    this.lastTap = "—";
 
     this.add
       .text(width / 2, height / 2 - 140, "STRAGAME", {
@@ -42,12 +58,34 @@ export class MenuScene extends Phaser.Scene {
         },
       )
       .setOrigin(0.5);
+
+    this.debugText = this.add
+      .text(8, 8, "tap: 0  last: —", {
+        fontFamily: "monospace",
+        fontSize: "12px",
+        color: "#475569",
+      })
+      .setDepth(1000);
+
+    this.input.on("pointerup", (pointer: Phaser.Input.Pointer) => this.handleTap(pointer));
+    this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      this.tapCount++;
+      this.lastTap = `${Math.round(pointer.x)},${Math.round(pointer.y)}`;
+      this.debugText.setText(`tap: ${this.tapCount}  last: ${this.lastTap}`);
+    });
+    this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => this.handleHover(pointer));
   }
 
   private makeButton(x: number, y: number, label: string, onClick: () => void): void {
-    const bg = this.add.rectangle(x, y, 280, 56, 0x1e293b, 1);
+    const w = 280;
+    const h = 56;
+    const baseFill = 0x1e293b;
+    const hoverFill = 0x334155;
+
+    const bg = this.add.rectangle(x, y, w, h, baseFill, 1);
     bg.setStrokeStyle(2, 0xfde68a, 1);
-    const txt = this.add
+
+    this.add
       .text(x, y, label, {
         fontFamily: "system-ui, sans-serif",
         fontSize: "20px",
@@ -55,11 +93,32 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    bg.setInteractive({ useHandCursor: true });
-    bg.on("pointerover", () => bg.setFillStyle(0x334155));
-    bg.on("pointerout", () => bg.setFillStyle(0x1e293b));
-    bg.on("pointerdown", onClick);
-    txt.setInteractive({ useHandCursor: true });
-    txt.on("pointerdown", onClick);
+    this.buttons.push({
+      rect: new Phaser.Geom.Rectangle(x - w / 2, y - h / 2, w, h),
+      bg,
+      baseFill,
+      hoverFill,
+      onClick,
+    });
+  }
+
+  private handleTap(pointer: Phaser.Input.Pointer): void {
+    const px = pointer.x;
+    const py = pointer.y;
+    for (const btn of this.buttons) {
+      if (Phaser.Geom.Rectangle.Contains(btn.rect, px, py)) {
+        btn.onClick();
+        return;
+      }
+    }
+  }
+
+  private handleHover(pointer: Phaser.Input.Pointer): void {
+    const px = pointer.x;
+    const py = pointer.y;
+    for (const btn of this.buttons) {
+      const inside = Phaser.Geom.Rectangle.Contains(btn.rect, px, py);
+      btn.bg.setFillStyle(inside ? btn.hoverFill : btn.baseFill);
+    }
   }
 }

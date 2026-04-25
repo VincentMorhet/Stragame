@@ -18,6 +18,11 @@ const config: Phaser.Types.Core.GameConfig = {
     antialias: true,
     pixelArt: false,
   },
+  input: {
+    activePointers: 3,
+    touch: true,
+    mouse: true,
+  },
   scene: [BootScene, MenuScene, GameScene, UIScene],
 };
 

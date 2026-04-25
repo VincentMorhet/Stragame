@@ -42,6 +42,22 @@
   </head>
   <body>
     <div id="game"></div>
+    <pre id="err" style="position:fixed;left:0;right:0;bottom:0;margin:0;padding:8px;background:#7f1d1d;color:#fee;font:12px/1.4 monospace;white-space:pre-wrap;display:none;z-index:9999;max-height:40vh;overflow:auto;"></pre>
+    <script>
+      (function () {
+        var box = document.getElementById("err");
+        function show(msg) {
+          box.style.display = "block";
+          box.textContent += msg + "\n";
+        }
+        window.addEventListener("error", function (e) {
+          show("ERR: " + (e.message || e.error) + " @ " + (e.filename || "?") + ":" + (e.lineno || "?"));
+        });
+        window.addEventListener("unhandledrejection", function (e) {
+          show("REJ: " + (e.reason && e.reason.message ? e.reason.message : e.reason));
+        });
+      })();
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
