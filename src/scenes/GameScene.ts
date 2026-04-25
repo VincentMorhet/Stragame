@@ -78,7 +78,10 @@ export class GameScene extends Phaser.Scene {
     const baseWorld = this.grid.gridToWorld(this.path.baseGrid.x, this.path.baseGrid.y);
     this.base = new Base(this, baseWorld.x, baseWorld.y, BASE_MAX_HP);
 
-    this.hoverIndicator = this.add.polygon(0, 0, [], 0xffffff, 0.25);
+    const hw = TILE_WIDTH / 2;
+    const hh = TILE_HEIGHT / 2;
+    const diamondPoints = [0, -hh, hw, 0, 0, hh, -hw, 0];
+    this.hoverIndicator = this.add.polygon(0, 0, diamondPoints, 0xffffff, 0.25);
     this.hoverIndicator.setStrokeStyle(2, 0xffffff, 0.8);
     this.hoverIndicator.setVisible(false);
     this.hoverIndicator.setDepth(800);
@@ -201,10 +204,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showHover(x: number, y: number, valid: boolean): void {
-    const hw = TILE_WIDTH / 2;
-    const hh = TILE_HEIGHT / 2;
     this.hoverIndicator.setPosition(x, y);
-    this.hoverIndicator.setTo([0, -hh, hw, 0, 0, hh, -hw, 0]);
     this.hoverIndicator.setFillStyle(valid ? 0x4ade80 : 0xef4444, 0.35);
     this.hoverIndicator.setStrokeStyle(2, valid ? 0x4ade80 : 0xef4444, 1);
     this.hoverIndicator.setVisible(true);
