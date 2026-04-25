@@ -1,0 +1,38 @@
+{
+  "grunt": {
+    "name": "Grunt",
+    "color": "0xff5a5a",
+    "hp": 30,
+    "speed": 80,
+    "damageToBase": 1,
+    "reward": 5,
+    "radius": 10
+  },
+  "tank": {
+    "name": "Tank",
+    "color": "0x8a4a2a",
+    "hp": 200,
+    "speed": 35,
+    "damageToBase": 5,
+    "reward": 20,
+    "radius": 14
+  },
+  "swarm": {
+    "name": "Essaim",
+    "color": "0xffd24a",
+    "hp": 10,
+    "speed": 140,
+    "damageToBase": 1,
+    "reward": 2,
+    "radius": 7
+  },
+  "boss": {
+    "name": "Boss",
+    "color": "0x2a2a2a",
+    "hp": 1500,
+    "speed": 40,
+    "damageToBase": 20,
+    "reward": 200,
+    "radius": 18
+  }
+}

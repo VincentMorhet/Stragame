@@ -1,0 +1,42 @@
+{
+  "turret": {
+    "name": "Tourelle",
+    "description": "Dégâts simples, cadence moyenne.",
+    "color": "0x4aa3ff",
+    "levels": [
+      { "cost": 50, "damage": 10, "range": 3, "fireRate": 1.5, "projectileSpeed": 600 },
+      { "cost": 60, "damage": 18, "range": 3.2, "fireRate": 1.8, "projectileSpeed": 650 },
+      { "cost": 90, "damage": 32, "range": 3.5, "fireRate": 2.2, "projectileSpeed": 700 }
+    ]
+  },
+  "cannon": {
+    "name": "Canon",
+    "description": "AoE lourds, cadence lente.",
+    "color": "0xff8a3c",
+    "levels": [
+      { "cost": 80, "damage": 25, "range": 2.5, "fireRate": 0.6, "projectileSpeed": 400, "splashRadius": 1.0 },
+      { "cost": 100, "damage": 45, "range": 2.7, "fireRate": 0.7, "projectileSpeed": 420, "splashRadius": 1.2 },
+      { "cost": 150, "damage": 80, "range": 3.0, "fireRate": 0.8, "projectileSpeed": 450, "splashRadius": 1.5 }
+    ]
+  },
+  "slower": {
+    "name": "Ralentisseur",
+    "description": "Peu de dégâts, applique un slow.",
+    "color": "0x7adfb6",
+    "levels": [
+      { "cost": 60, "damage": 2, "range": 2.5, "fireRate": 1.0, "projectileSpeed": 500, "slowFactor": 0.5, "slowDuration": 1.5 },
+      { "cost": 80, "damage": 4, "range": 2.7, "fireRate": 1.2, "projectileSpeed": 520, "slowFactor": 0.4, "slowDuration": 1.8 },
+      { "cost": 120, "damage": 7, "range": 3.0, "fireRate": 1.4, "projectileSpeed": 540, "slowFactor": 0.3, "slowDuration": 2.2 }
+    ]
+  },
+  "sniper": {
+    "name": "Sniper",
+    "description": "Long range, gros dégâts, anti-tank.",
+    "color": "0xd060ff",
+    "levels": [
+      { "cost": 100, "damage": 50, "range": 6.0, "fireRate": 0.4, "projectileSpeed": 1200 },
+      { "cost": 130, "damage": 90, "range": 6.5, "fireRate": 0.5, "projectileSpeed": 1300 },
+      { "cost": 200, "damage": 160, "range": 7.0, "fireRate": 0.6, "projectileSpeed": 1400 }
+    ]
+  }
+}

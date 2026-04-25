@@ -1,0 +1,71 @@
+{
+  "endOfWaveBonus": 25,
+  "waves": [
+    {
+      "label": "Vague 1 — Éclaireurs",
+      "spawns": [{ "type": "grunt", "count": 8, "interval": 0.9, "delay": 0.5 }]
+    },
+    {
+      "label": "Vague 2 — Patrouille",
+      "spawns": [{ "type": "grunt", "count": 14, "interval": 0.7, "delay": 0.5 }]
+    },
+    {
+      "label": "Vague 3 — Renforts",
+      "spawns": [
+        { "type": "grunt", "count": 10, "interval": 0.6, "delay": 0.0 },
+        { "type": "swarm", "count": 8, "interval": 0.3, "delay": 8.0 }
+      ]
+    },
+    {
+      "label": "Vague 4 — Premier Tank",
+      "spawns": [
+        { "type": "grunt", "count": 12, "interval": 0.5, "delay": 0.0 },
+        { "type": "tank", "count": 1, "interval": 1.0, "delay": 7.0 }
+      ]
+    },
+    {
+      "label": "Vague 5 — Mêlée",
+      "spawns": [
+        { "type": "swarm", "count": 20, "interval": 0.25, "delay": 0.0 },
+        { "type": "grunt", "count": 8, "interval": 0.6, "delay": 6.0 }
+      ]
+    },
+    {
+      "label": "Vague 6 — Blindés",
+      "spawns": [
+        { "type": "tank", "count": 3, "interval": 2.5, "delay": 0.5 },
+        { "type": "grunt", "count": 12, "interval": 0.5, "delay": 4.0 }
+      ]
+    },
+    {
+      "label": "Vague 7 — Déferlante",
+      "spawns": [
+        { "type": "swarm", "count": 30, "interval": 0.2, "delay": 0.0 },
+        { "type": "tank", "count": 2, "interval": 3.0, "delay": 8.0 }
+      ]
+    },
+    {
+      "label": "Vague 8 — Convoi",
+      "spawns": [
+        { "type": "tank", "count": 5, "interval": 2.0, "delay": 0.0 },
+        { "type": "grunt", "count": 16, "interval": 0.4, "delay": 6.0 }
+      ]
+    },
+    {
+      "label": "Vague 9 — Ultimatum",
+      "spawns": [
+        { "type": "swarm", "count": 40, "interval": 0.18, "delay": 0.0 },
+        { "type": "tank", "count": 6, "interval": 1.8, "delay": 4.0 },
+        { "type": "grunt", "count": 20, "interval": 0.4, "delay": 10.0 }
+      ]
+    },
+    {
+      "label": "Vague 10 — Boss",
+      "spawns": [
+        { "type": "grunt", "count": 16, "interval": 0.5, "delay": 0.0 },
+        { "type": "swarm", "count": 20, "interval": 0.2, "delay": 6.0 },
+        { "type": "boss", "count": 1, "interval": 1.0, "delay": 14.0 }
+      ]
+    }
+  ]
+}
