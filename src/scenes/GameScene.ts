@@ -6,6 +6,7 @@ import wavesDataRaw from "../data/waves.json";
 import type {
   EnemiesData,
   EnemyConfig,
+  GridCoord,
   MapData,
   TowersData,
   WavesData,
@@ -22,6 +23,10 @@ import { Projectile } from "../entities/Projectile";
 
 const STARTING_CREDITS = 100;
 const BASE_MAX_HP = 20;
+const DEFAULT_ZOOM = 2;
+const MIN_ZOOM = 0.6;
+const MAX_ZOOM = 4;
+const DRAG_THRESHOLD = 8;
 
 export class GameScene extends Phaser.Scene {
   private mapData!: MapData;
@@ -46,6 +51,10 @@ export class GameScene extends Phaser.Scene {
   private selectedTowerType: string | null = null;
   private placedKeys: Set<string> = new Set();
 
+  private pointerDownPos: { x: number; y: number } | null = null;
+  private isDragging: boolean = false;
+  private pinchPrevDist: number | null = null;
+
   constructor() {
     super("GameScene");
   }
@@ -63,16 +72,15 @@ export class GameScene extends Phaser.Scene {
     this.placedKeys = new Set();
     this.gameOver = false;
     this.selectedTowerType = null;
+    this.pointerDownPos = null;
+    this.isDragging = false;
+    this.pinchPrevDist = null;
 
-    const cx = this.scale.width / 2;
-    const cy = this.scale.height / 2 + 40;
-    const centerOffsetX = ((this.mapData.gridWidth - this.mapData.gridHeight) * TILE_WIDTH) / 4;
-    const centerOffsetY = ((this.mapData.gridWidth + this.mapData.gridHeight) * TILE_HEIGHT) / 4;
+    this.cameras.main.setBackgroundColor(0x0b1220);
 
-    this.grid = new IsoGrid(this.mapData, cx - centerOffsetX, cy - centerOffsetY);
+    this.grid = new IsoGrid(this.mapData, 0, 0);
     this.path = new PathfindingHelper(this.mapData, this.grid);
 
-    this.drawBackground();
     this.drawTiles();
 
     const baseWorld = this.grid.gridToWorld(this.path.baseGrid.x, this.path.baseGrid.y);
@@ -86,6 +94,8 @@ export class GameScene extends Phaser.Scene {
     this.hoverIndicator.setVisible(false);
     this.hoverIndicator.setDepth(800);
 
+    this.setupCamera();
+
     this.economy = new EconomyManager(this.bus, STARTING_CREDITS);
     this.waves = new WaveManager(this.bus, this.wavesData, (type) => this.spawnEnemy(type));
 
@@ -93,15 +103,29 @@ export class GameScene extends Phaser.Scene {
     this.bus.emit(Events.BaseHpChanged, { hp: this.base.hp, max: this.base.maxHp });
     this.waves.emitInitial();
 
-    this.input.on("pointermove", (p: Phaser.Input.Pointer) => this.handlePointerMove(p));
-    this.input.on("pointerdown", (p: Phaser.Input.Pointer) => this.handlePointerDown(p));
+    this.input.on("pointerdown", (p: Phaser.Input.Pointer) => this.onPointerDown(p));
+    this.input.on("pointermove", (p: Phaser.Input.Pointer) => this.onPointerMove(p));
+    this.input.on("pointerup", (p: Phaser.Input.Pointer) => this.onPointerUp(p));
+    this.input.on(
+      "wheel",
+      (
+        _p: Phaser.Input.Pointer,
+        _objs: Phaser.GameObjects.GameObject[],
+        _dx: number,
+        deltaY: number,
+      ) => this.applyZoom(this.cameras.main.zoom * (deltaY > 0 ? 0.9 : 1.1), null),
+    );
 
     this.bus.on(Events.TowerSelected, (type: string | null) => {
       this.selectedTowerType = type;
+      if (!type) this.hoverIndicator.setVisible(false);
     });
     this.bus.on(Events.RequestStartWave, () => {
       this.waves.startNextWave();
     });
+    this.bus.on(Events.RequestZoomIn, () => this.applyZoom(this.cameras.main.zoom * 1.25, null));
+    this.bus.on(Events.RequestZoomOut, () => this.applyZoom(this.cameras.main.zoom * 0.8, null));
+    this.bus.on(Events.RequestCenterCamera, () => this.centerCameraOnGrid());
 
     if (this.input.keyboard) {
       this.input.keyboard.on("keydown-SPACE", () => this.waves.startNextWave());
@@ -112,6 +136,35 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanup());
+  }
+
+  private setupCamera(): void {
+    const b = this.grid.bounds();
+    const margin = 240;
+    this.cameras.main.setBounds(
+      b.minX - margin,
+      b.minY - margin,
+      b.maxX - b.minX + 2 * margin,
+      b.maxY - b.minY + 2 * margin,
+    );
+    this.cameras.main.setZoom(DEFAULT_ZOOM);
+    this.centerCameraOnGrid();
+  }
+
+  private centerCameraOnGrid(): void {
+    const b = this.grid.bounds();
+    this.cameras.main.centerOn((b.minX + b.maxX) / 2, (b.minY + b.maxY) / 2);
+  }
+
+  private applyZoom(target: number, anchorScreen: { x: number; y: number } | null): void {
+    const cam = this.cameras.main;
+    const before = anchorScreen ? cam.getWorldPoint(anchorScreen.x, anchorScreen.y) : null;
+    cam.setZoom(Phaser.Math.Clamp(target, MIN_ZOOM, MAX_ZOOM));
+    if (before && anchorScreen) {
+      const after = cam.getWorldPoint(anchorScreen.x, anchorScreen.y);
+      cam.scrollX += before.x - after.x;
+      cam.scrollY += before.y - after.y;
+    }
   }
 
   update(_time: number, delta: number): void {
@@ -150,19 +203,6 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private drawBackground(): void {
-    const b = this.grid.bounds();
-    const bg = this.add.rectangle(
-      (b.minX + b.maxX) / 2,
-      (b.minY + b.maxY) / 2,
-      b.maxX - b.minX + 80,
-      b.maxY - b.minY + 80,
-      0x111827,
-      0,
-    );
-    bg.setDepth(-100);
-  }
-
   private drawTiles(): void {
     const g = this.add.graphics();
     g.setDepth(0);
@@ -170,10 +210,9 @@ export class GameScene extends Phaser.Scene {
       for (let x = 0; x < this.grid.width; x++) {
         const isPath = this.path.isPath(x, y);
         const isBase = this.path.isBase(x, y);
-        const fill = isBase ? 0xfacc15 : isPath ? 0x6b4f2a : 0x355e3b;
-        const altGrass = (x + y) % 2 === 0 ? 0x355e3b : 0x2f5234;
-        const fillFinal = isBase ? fill : isPath ? fill : altGrass;
-        const stroke = isBase ? 0x7a5a00 : isPath ? 0x3e2d18 : 0x1e3a25;
+        const altGrass = (x + y) % 2 === 0 ? 0x3d6b40 : 0x355e3b;
+        const fillFinal = isBase ? 0xfacc15 : isPath ? 0x8c6b3a : altGrass;
+        const stroke = isBase ? 0x7a5a00 : isPath ? 0x4a3520 : 0x1e3a25;
         const pts = this.grid.tileDiamond(x, y);
         g.fillStyle(fillFinal, 1);
         g.lineStyle(1, stroke, 1);
@@ -185,16 +224,66 @@ export class GameScene extends Phaser.Scene {
         g.closePath();
         g.fillPath();
         g.strokePath();
+        if (isPath && !isBase) {
+          const c = this.grid.gridToWorld(x, y);
+          g.fillStyle(0x6b4f2a, 0.7);
+          g.fillCircle(c.x - 6, c.y - 2, 1.5);
+          g.fillCircle(c.x + 4, c.y + 3, 1.5);
+        }
       }
     }
   }
 
-  private handlePointerMove(p: Phaser.Input.Pointer): void {
+  private pointerToTile(p: Phaser.Input.Pointer): { tile: GridCoord; world: { x: number; y: number } } {
+    const wp = this.cameras.main.getWorldPoint(p.x, p.y);
+    return { tile: this.grid.worldToGrid(wp.x, wp.y), world: { x: wp.x, y: wp.y } };
+  }
+
+  private onPointerDown(p: Phaser.Input.Pointer): void {
+    if (this.gameOver) return;
+    if (this.input.pointer1?.isDown && this.input.pointer2?.isDown) {
+      this.pinchPrevDist = this.pinchDistance();
+      this.pointerDownPos = null;
+      return;
+    }
+    this.pointerDownPos = { x: p.x, y: p.y };
+    this.isDragging = false;
+  }
+
+  private onPointerMove(p: Phaser.Input.Pointer): void {
+    if (this.input.pointer1?.isDown && this.input.pointer2?.isDown) {
+      const d = this.pinchDistance();
+      if (this.pinchPrevDist !== null && d > 0) {
+        const ratio = d / this.pinchPrevDist;
+        const mid = this.pinchMidpoint();
+        this.applyZoom(this.cameras.main.zoom * ratio, mid);
+      }
+      this.pinchPrevDist = d;
+      this.isDragging = true;
+      this.hoverIndicator.setVisible(false);
+      return;
+    }
+
+    if (this.pointerDownPos && p.isDown) {
+      const dx = p.x - this.pointerDownPos.x;
+      const dy = p.y - this.pointerDownPos.y;
+      if (!this.isDragging && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
+        this.isDragging = true;
+        this.hoverIndicator.setVisible(false);
+      }
+      if (this.isDragging) {
+        const cam = this.cameras.main;
+        cam.scrollX -= (p.x - p.prevPosition.x) / cam.zoom;
+        cam.scrollY -= (p.y - p.prevPosition.y) / cam.zoom;
+        return;
+      }
+    }
+
     if (!this.selectedTowerType) {
       this.hoverIndicator.setVisible(false);
       return;
     }
-    const tile = this.grid.worldToGrid(p.worldX, p.worldY);
+    const { tile } = this.pointerToTile(p);
     if (!this.grid.inBounds(tile.x, tile.y)) {
       this.hoverIndicator.setVisible(false);
       return;
@@ -203,17 +292,23 @@ export class GameScene extends Phaser.Scene {
     this.showHover(c.x, c.y, this.canBuildOn(tile.x, tile.y));
   }
 
-  private showHover(x: number, y: number, valid: boolean): void {
-    this.hoverIndicator.setPosition(x, y);
-    this.hoverIndicator.setFillStyle(valid ? 0x4ade80 : 0xef4444, 0.35);
-    this.hoverIndicator.setStrokeStyle(2, valid ? 0x4ade80 : 0xef4444, 1);
-    this.hoverIndicator.setVisible(true);
-  }
+  private onPointerUp(p: Phaser.Input.Pointer): void {
+    if (this.input.pointer1?.isDown || this.input.pointer2?.isDown) {
+      this.pinchPrevDist = null;
+      return;
+    }
+    this.pinchPrevDist = null;
 
-  private handlePointerDown(p: Phaser.Input.Pointer): void {
+    if (this.isDragging) {
+      this.isDragging = false;
+      this.pointerDownPos = null;
+      return;
+    }
+    this.pointerDownPos = null;
     if (this.gameOver) return;
     if (!this.selectedTowerType) return;
-    const tile = this.grid.worldToGrid(p.worldX, p.worldY);
+
+    const { tile } = this.pointerToTile(p);
     if (!this.canBuildOn(tile.x, tile.y)) return;
     const config = this.towersData[this.selectedTowerType];
     if (!config) return;
@@ -224,6 +319,26 @@ export class GameScene extends Phaser.Scene {
     const tower = new Tower(this, this.selectedTowerType, config, tile, c.x, c.y);
     this.towers.push(tower);
     this.placedKeys.add(`${tile.x},${tile.y}`);
+  }
+
+  private pinchDistance(): number {
+    const a = this.input.pointer1;
+    const b = this.input.pointer2;
+    if (!a || !b) return 0;
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  private pinchMidpoint(): { x: number; y: number } {
+    const a = this.input.pointer1!;
+    const b = this.input.pointer2!;
+    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  }
+
+  private showHover(x: number, y: number, valid: boolean): void {
+    this.hoverIndicator.setPosition(x, y);
+    this.hoverIndicator.setFillStyle(valid ? 0x4ade80 : 0xef4444, 0.35);
+    this.hoverIndicator.setStrokeStyle(2, valid ? 0x4ade80 : 0xef4444, 1);
+    this.hoverIndicator.setVisible(true);
   }
 
   private canBuildOn(gx: number, gy: number): boolean {
@@ -251,6 +366,9 @@ export class GameScene extends Phaser.Scene {
   private cleanup(): void {
     this.bus.off(Events.TowerSelected);
     this.bus.off(Events.RequestStartWave);
+    this.bus.off(Events.RequestZoomIn);
+    this.bus.off(Events.RequestZoomOut);
+    this.bus.off(Events.RequestCenterCamera);
     for (const e of this.enemies) e.destroy();
     for (const t of this.towers) t.destroy();
     for (const p of this.projectiles) p.sprite.destroy();

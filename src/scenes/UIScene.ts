@@ -86,6 +86,8 @@ export class UIScene extends Phaser.Scene {
 
     this.buildStartButton(width, height);
 
+    this.buildZoomButtons(width, height);
+
     this.bus.on(Events.CreditsChanged, (n: number) => this.onCredits(n));
     this.bus.on(Events.BaseHpChanged, (info: { hp: number; max: number }) => this.onHp(info));
     this.bus.on(Events.WaveChanged, (info: WaveInfo) => this.onWave(info));
@@ -185,6 +187,29 @@ export class UIScene extends Phaser.Scene {
         bg.setStrokeStyle(2, color, 1);
       }
     });
+  }
+
+  private buildZoomButtons(width: number, height: number): void {
+    const x = width - 36;
+    const yStart = height / 2 - 60;
+    const make = (offset: number, label: string, onClick: () => void) => {
+      const c = this.add.container(x, yStart + offset).setDepth(11);
+      const bg = this.add.rectangle(0, 0, 44, 44, 0x1e293b, 0.92).setStrokeStyle(2, 0xfde68a, 1);
+      const txt = this.add
+        .text(0, 0, label, {
+          fontFamily: "system-ui, sans-serif",
+          fontSize: "22px",
+          color: "#fde68a",
+          fontStyle: "bold",
+        })
+        .setOrigin(0.5);
+      c.add([bg, txt]);
+      bg.setInteractive({ useHandCursor: true });
+      bg.on("pointerdown", onClick);
+    };
+    make(0, "+", () => this.bus.emit(Events.RequestZoomIn));
+    make(52, "−", () => this.bus.emit(Events.RequestZoomOut));
+    make(104, "⊙", () => this.bus.emit(Events.RequestCenterCamera));
   }
 
   private buildStartButton(width: number, height: number): void {

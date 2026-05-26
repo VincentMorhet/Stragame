@@ -68,4 +68,7 @@ export const Events = {
   GameWon: "game-won",
   TowerSelected: "tower-selected",
   RequestStartWave: "request-start-wave",
+  RequestZoomIn: "request-zoom-in",
+  RequestZoomOut: "request-zoom-out",
+  RequestCenterCamera: "request-center-camera",
 } as const;
